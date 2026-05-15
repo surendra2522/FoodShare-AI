@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  # The AI Engine (Python/Flask)
+  ai:
+    build:
+      context: ./ai
+    ports:
+      - '8000:8000'
+    restart: unless-stopped
+
+  # The Smart Food Backend (Node.js/Express)
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - '8214:8214'
+    environment:
+      - PORT=8214
+      - AI_SERVICE_URL=http://ai:8000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - JWT_SECRET=${JWT_SECRET:-supersecret}
+      - CLIENT_URL=http://localhost:8214
+    depends_on:
+      - ai
+    restart: unless-stopped
+
+  # The Frontend (Served by Backend in Production)
+  # NOTE: In a true production docker setup, you'd build the frontend 
+  # and let the backend serve it from /dist, which our server.js does.
+  # So we don't strictly need a separate frontend service if serving static files.
+  # But for dev-like docker testing:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '3000:3000'
+    environment:
+      - VITE_API_URL=/api
+    depends_on:
+      - backend
+    restart: unless-stopped

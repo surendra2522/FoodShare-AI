@@ -1,0 +1,127 @@
+{
+  "users": [
+    {
+      "name": "suri",
+      "email": "junglesuri@gmail.com",
+      "password": "$2a$10$cAiuOWr0uLwMYoS9JNBdw.w5zc85EGHguRvZi1gwOqU7TyENHxpbW",
+      "role": "Donor",
+      "createdAt": "2026-05-07T17:41:15.302Z",
+      "_id": "1778175675303"
+    },
+    {
+      "name": "balu",
+      "email": "veerepallibalaramkrishna@gmail.com",
+      "password": "$2a$10$nN9ZFEt1WtrUIxsI3SH.1.WeHyuthcbmVZ66L.GCwzYma3BMPizOC",
+      "role": "Receiver",
+      "createdAt": "2026-05-07T17:42:23.708Z",
+      "_id": "1778175743709"
+    },
+    {
+      "name": "surendra",
+      "email": "jangilisurendra25@gmail.com",
+      "password": "$2a$10$O.51ctuWS6nkhNV19CK7HuDg/4tFLuPesOrNJLw08HCHy0YK5aApu",
+      "role": "Donor",
+      "createdAt": "2026-05-07T18:36:16.307Z",
+      "_id": "1778178976308"
+    },
+    {
+      "name": "surendra",
+      "email": "janbgilisurendra25@gmail.com",
+      "password": "$2a$10$C1R8A6SsxIoD73o..JQZWemB3uE2PXSp2/xc2nPQ8rlf17vNyXzZC",
+      "role": "Receiver",
+      "createdAt": "2026-05-07T18:37:16.487Z",
+      "_id": "1778179036489"
+    },
+    {
+      "name": "suri",
+      "email": "surij@gmail.com",
+      "password": "$2a$10$/Xdoc2hTn20e6OO.nFMwc.sqTVXKTtNQYf6.akIPwbbTOmMjSsRmW",
+      "role": "Donor",
+      "createdAt": "2026-05-08T13:36:20.085Z",
+      "_id": "1778247380086"
+    },
+    {
+      "name": "ball",
+      "email": "bal@gmail.com",
+      "password": "$2a$10$deLm5cpXWKozlJsemxmA6epiw3WWygg5bXq/tMG1JcKwgjWuaxrLm",
+      "role": "Receiver",
+      "createdAt": "2026-05-08T13:38:00.382Z",
+      "_id": "1778247480382"
+    }
+  ],
+  "donations": [
+    {
+      "functionName": "Marriage",
+      "foodType": "Veg",
+      "servings": "43",
+      "expiryHours": "4",
+      "pickupArea": "Vijayashanti Apartments,Chettipedu,Tamil Nadu",
+      "notes": "",
+      "location": {
+        "lat": 17.394597714575358,
+        "lng": 78.48497128564459
+      },
+      "donor": "1778175675303",
+      "status": "accepted",
+      "createdAt": "2026-05-07T17:46:40.033Z",
+      "_id": "1778176000033",
+      "receiver": "1778175743709",
+      "acceptedAt": "2026-05-07T17:46:57.004Z"
+    },
+    {
+      "functionName": "Marriage",
+      "foodType": "Veg",
+      "servings": "43",
+      "expiryHours": "4",
+      "pickupArea": "Vijayashanti Apartments,Chettipedu,Tamil Nadu",
+      "notes": "Fresh Food",
+      "location": {
+        "lat": 17.382000739271103,
+        "lng": 78.48634512504886
+      },
+      "donor": "1778175675303",
+      "status": "accepted",
+      "createdAt": "2026-05-07T17:55:42.115Z",
+      "_id": "1778176542119",
+      "receiver": "1778175743709",
+      "acceptedAt": "2026-05-07T17:56:17.735Z"
+    },
+    {
+      "functionName": "Marriage",
+      "foodType": "Veg",
+      "servings": "43",
+      "expiryHours": "4",
+      "pickupArea": "Vijayashanti Apartments,Chettipedu,Tamil Nadu",
+      "notes": "jqwud",
+      "location": {
+        "lat": 17.381444488584428,
+        "lng": 78.46230293547367
+      },
+      "donor": "1778175675303",
+      "status": "accepted",
+      "createdAt": "2026-05-07T17:59:03.902Z",
+      "_id": "1778176743902",
+      "receiver": "1778247480382",
+      "acceptedAt": "2026-05-08T13:38:13.489Z"
+    },
+    {
+      "functionName": "pelli",
+      "foodType": "Veg",
+      "servings": "14",
+      "expiryHours": "4",
+      "pickupArea": "chettiped",
+      "notes": "mhiywe",
+      "location": {
+        "lat": 17.39381247460347,
+        "lng": 78.4930425921448
+      },
+      "donor": "1778178976308",
+      "status": "accepted",
+      "createdAt": "2026-05-07T18:36:44.831Z",
+      "_id": "1778179004832",
+      "receiver": "1778179036489",
+      "acceptedAt": "2026-05-07T18:37:30.564Z"
+    }
+  ],
+  "notifications": []
+}
