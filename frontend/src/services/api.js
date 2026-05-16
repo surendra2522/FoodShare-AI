@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const API_URL = 'https://foodshare-backend-wth8.onrender.com/api'
 
 export const http = axios.create({
   baseURL: API_URL,
@@ -11,12 +11,15 @@ export const http = axios.create({
 
 http.interceptors.request.use((config) => {
   const persisted = window.localStorage.getItem('redistribution_auth')
+
   if (persisted) {
     const { token } = JSON.parse(persisted)
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
   }
+
   return config
 })
 
@@ -32,7 +35,8 @@ export const donationService = {
   getMyMissions: () => http.get('/donations/my-missions'),
   getAvailable: () => http.get('/donations/available'),
   accept: (id) => http.patch(`/donations/${id}/accept`),
-  updateStatus: (id, status) => http.patch(`/donations/${id}/status`, { status }),
+  updateStatus: (id, status) =>
+    http.patch(`/donations/${id}/status`, { status }),
 }
 
 export const analyticsService = {
