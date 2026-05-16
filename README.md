@@ -1,4 +1,7 @@
 # 🍲 FoodShare AI | Smart Food Redistribution
+## Live Website
+
+https://food-share-ai-nine.vercel.app
 
 ### *Turning Event Leftovers into Community Blessings*
 
