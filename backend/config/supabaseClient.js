@@ -1,3 +1,4 @@
+import ws from "ws"
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
@@ -15,6 +16,14 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in backend/.env')
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY,
+  {
+    global: {
+      websocket: ws
+    }
+  }
+)
 
 export default supabase
