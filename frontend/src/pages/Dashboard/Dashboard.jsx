@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
-import { 
-  Utensils, MapPin, Clock, CheckCircle2, ChevronRight, Bell, 
-  Home as HomeIcon, Sparkles, AlertCircle, TrendingUp, X, 
-  Plus, Heart, Award, History, ArrowUpRight, Package 
+import {
+  Utensils, MapPin, Clock, CheckCircle2, ChevronRight, Bell,
+  Home as HomeIcon, Sparkles, AlertCircle, TrendingUp, X,
+  Plus, Heart, Award, History, ArrowUpRight, Package, Navigation
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { donationService, http } from '../../services/api'
 import ReceiverMap from '../../components/ReceiverMap'
-
 const Dashboard = () => {
   const { user, token } = useAuth()
   const navigate = useNavigate()
   const [role, setRole] = useState(user?.role?.toLowerCase() || 'donor')
-  
+
   // States from NGO
   const [donations, setDonations] = useState([])
   const [notifications, setNotifications] = useState([])
@@ -22,7 +21,7 @@ const Dashboard = () => {
   const [acceptedId, setAcceptedId] = useState(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [lastClaimedId, setLastClaimedId] = useState(null)
-  
+
   // States from Donor
   const [myDonations, setMyDonations] = useState([])
   const [missions, setMissions] = useState([])
@@ -85,16 +84,16 @@ const Dashboard = () => {
   const handleAccept = async (rawId) => {
     const id = rawId;
     if (!id) return;
-    
+
     try {
       setAcceptedId(id);
       await donationService.accept(id);
       setLastClaimedId(id);
-      
+
       // Update local state
       setDonations(prev => prev.filter(d => (d.id || d._id) !== id));
       setShowSuccessModal(true);
-      
+
       // Refresh missions in background
       donationService.getMyMissions().then(res => setMissions(res.data));
     } catch (error) {
@@ -105,7 +104,7 @@ const Dashboard = () => {
     }
   }
 
-  const totalMeals = role === 'donor' 
+  const totalMeals = role === 'donor'
     ? myDonations.reduce((sum, d) => sum + (d.servings || 0), 0)
     : missions.filter(m => m.status === 'delivered').reduce((sum, d) => sum + (d.servings || 0), 0)
 
@@ -137,7 +136,7 @@ const Dashboard = () => {
             Welcome, <span className="text-gradient">{user?.name}</span>
           </h1>
           <p className="mt-2 text-slate-600 max-w-lg">
-            {role === 'ngo' 
+            {role === 'ngo'
               ? 'Real-time alerts for surplus food available in your immediate vicinity.'
               : `You have helped save ${totalMeals} meals from going to waste.`}
           </p>
@@ -150,16 +149,16 @@ const Dashboard = () => {
               <span>Post Surplus</span>
             </Link>
           ) : (
-            <button 
+            <button
               onClick={() => setShowNotifications(true)}
               className="relative h-14 w-14 rounded-2xl bg-white shadow-lg border-2 border-emerald-50 flex items-center justify-center text-slate-600 hover:text-brand-primary transition-all active:scale-95"
             >
-               <Bell size={24} />
-               {notifications.length > 0 && (
-                 <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
-                   {notifications.length}
-                 </div>
-               )}
+              <Bell size={24} />
+              {notifications.length > 0 && (
+                <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                  {notifications.length}
+                </div>
+              )}
             </button>
           )}
           <div className="glass rounded-[2rem] px-8 py-4 shadow-lg border-2 border-emerald-50 text-center">
@@ -184,8 +183,8 @@ const Dashboard = () => {
               <div className="glass h-full overflow-hidden rounded-[3rem] shadow-2xl relative">
                 <div className="absolute top-6 left-6 z-10 flex items-center gap-3">
                   <div className="glass flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold text-slate-800 shadow-md">
-                     <MapPin size={16} className="text-brand-primary" />
-                     Live Mission Map
+                    <MapPin size={16} className="text-brand-primary" />
+                    Live Mission Map
                   </div>
                 </div>
                 <div className="h-[650px] p-4">
@@ -208,10 +207,10 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="rounded-[2.5rem] bg-white p-8 shadow-2xl">
-                 <h4 className="text-lg font-bold mb-6 text-slate-800">My Claimed Missions</h4>
-                 <div className="space-y-4">
-                    <NGOMissionList missions={missions} />
-                 </div>
+                <h4 className="text-lg font-bold mb-6 text-slate-800">My Claimed Missions</h4>
+                <div className="space-y-4">
+                  <NGOMissionList missions={missions} />
+                </div>
               </div>
             </div>
           </>
@@ -221,12 +220,12 @@ const Dashboard = () => {
             <div className="lg:col-span-8 space-y-8">
               <div className="grid gap-6 sm:grid-cols-2">
                 <StatsCard title="Total Shared" value={totalMeals} icon={<Heart size={32} fill="currentColor" />} />
-                <StatsCard 
-                  title="Badges" 
-                  value={`Level ${Math.floor(totalMeals/100) + 1}`} 
-                  icon={<Award size={32} />} 
-                  dark 
-                  subtitle={`${Math.max(0, 100 - (totalMeals % 100))} meals to Level ${Math.floor(totalMeals/100) + 2}`}
+                <StatsCard
+                  title="Badges"
+                  value={`Level ${Math.floor(totalMeals / 100) + 1}`}
+                  icon={<Award size={32} />}
+                  dark
+                  subtitle={`${Math.max(0, 100 - (totalMeals % 100))} meals to Level ${Math.floor(totalMeals / 100) + 2}`}
                 />
               </div>
 
@@ -286,15 +285,15 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="glass rounded-[3rem] p-10 shadow-xl border-2 border-emerald-50">
-                 <h3 className="text-xl font-bold text-slate-800 mb-6">Impact Community</h3>
-                 <div className="flex -space-x-4 mb-6">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-100">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt="User" />
-                      </div>
-                    ))}
-                 </div>
-                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Join 500+ active donors</p>
+                <h3 className="text-xl font-bold text-slate-800 mb-6">Impact Community</h3>
+                <div className="flex -space-x-4 mb-6">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-100">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt="User" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Join 500+ active donors</p>
               </div>
             </div>
           </>
@@ -305,7 +304,7 @@ const Dashboard = () => {
       <AnimatePresence>
         {showSuccessModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -320,14 +319,14 @@ const Dashboard = () => {
                 The donor has been notified. You can now start tracking the pickup route.
               </p>
               <div className="space-y-3">
-                <button 
+                <button
                   onClick={() => navigate(`/tracking/${lastClaimedId}`)}
                   className="w-full btn-premium py-4 rounded-2xl flex items-center justify-center gap-2"
                 >
                   <Navigation size={18} />
                   Start Tracking
                 </button>
-                <button 
+                <button
                   onClick={() => setShowSuccessModal(false)}
                   className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
                 >
@@ -380,7 +379,7 @@ const DonationCard = ({ donation, handleAccept, acceptedId }) => (
         <div className="text-[10px] font-bold text-slate-400 uppercase">Meals</div>
       </div>
     </div>
-    <button 
+    <button
       onClick={() => handleAccept(donation.id || donation._id)}
       disabled={acceptedId !== null}
       className="mt-6 w-full rounded-2xl bg-slate-900 py-4 text-sm font-black text-white hover:bg-brand-primary transition-all shadow-lg hover:shadow-brand-primary/20 active:scale-[0.98]"
