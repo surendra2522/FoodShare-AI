@@ -69,22 +69,38 @@ const DonateFood = () => {
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (file) {
       setIsAnalyzing(true)
       setAnalysisResult(null)
-      // Simulate AI CNN Scan
-      setTimeout(() => {
-        setIsAnalyzing(false)
-        setAnalysisResult({
-          score: 98,
-          status: 'Excellent',
-          fileName: file.name
+      setError(null)
+      
+      const formData = new FormData()
+      formData.append('image', file)
+
+      try {
+        const res = await http.post('/ai/analyze-freshness', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         })
-      }, 2500)
+        
+        setAnalysisResult({
+          score: res.data.score,
+          status: res.data.status,
+          fileName: file.name,
+          predictions: res.data.predictions
+        })
+      } catch (err) {
+        console.error('AI Analysis Error:', err)
+        setError('Failed to analyze image. Please try again.')
+      } finally {
+        setIsAnalyzing(false)
+      }
     }
   }
+
+  const isSpoiled = analysisResult?.status === 'Spoiled';
+  const isSubmitDisabled = isSubmitting || isSpoiled || isAnalyzing;
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -360,22 +376,53 @@ const DonateFood = () => {
                   <motion.div 
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
-                    className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 flex items-start gap-3 overflow-hidden"
+                    className={`rounded-2xl border p-4 flex items-start gap-3 overflow-hidden mt-4 ${
+                      isAnalyzing ? 'bg-indigo-50 border-indigo-100' :
+                      analysisResult?.status === 'Spoiled' ? 'bg-red-50 border-red-200' :
+                      analysisResult?.status === 'Moderate' ? 'bg-amber-50 border-amber-200' :
+                      'bg-emerald-50 border-emerald-200'
+                    }`}
                   >
-                    <div className={`mt-1 ${isAnalyzing ? 'animate-pulse text-indigo-400' : 'text-indigo-600'}`}>
-                      <Sparkles size={18} />
+                    <div className={`mt-1 ${
+                      isAnalyzing ? 'animate-pulse text-indigo-400' :
+                      analysisResult?.status === 'Spoiled' ? 'text-red-500' :
+                      analysisResult?.status === 'Moderate' ? 'text-amber-500' :
+                      'text-emerald-500'
+                    }`}>
+                      {analysisResult?.status === 'Spoiled' ? <AlertTriangle size={18} /> : <Sparkles size={18} />}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-indigo-900">
-                        {isAnalyzing ? 'Deep Learning Analysis in Progress...' : 'AI Freshness Verification Success'}
+                      <div className={`text-sm font-bold ${
+                        isAnalyzing ? 'text-indigo-900' :
+                        analysisResult?.status === 'Spoiled' ? 'text-red-900' :
+                        analysisResult?.status === 'Moderate' ? 'text-amber-900' :
+                        'text-emerald-900'
+                      }`}>
+                        {isAnalyzing ? 'Deep Learning Analysis in Progress...' : 
+                         analysisResult.status === 'Spoiled' ? 'AI Safety Alert: Unsafe Food Detected' :
+                         'AI Freshness Verification Success'}
                       </div>
-                      <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
+                      <p className={`text-xs mt-1 leading-relaxed ${
+                        isAnalyzing ? 'text-indigo-700' :
+                        analysisResult?.status === 'Spoiled' ? 'text-red-700' :
+                        analysisResult?.status === 'Moderate' ? 'text-amber-700' :
+                        'text-emerald-700'
+                      }`}>
                         {isAnalyzing 
-                          ? 'Our CNN model is comparing image pixels against 10,000+ dataset samples to detect spoilage markers.'
-                          : `Analysis complete. Visual indicators suggest this food is in ${analysisResult.status} condition.`
+                          ? 'Our CNN model is comparing image pixels against dataset samples to detect spoilage markers.'
+                          : `Analysis complete. Visual indicators suggest this food is in ${analysisResult.status} condition. ${
+                              analysisResult.predictions ? `Matches: ${analysisResult.predictions.map(p => p.class.split(',')[0]).join(', ')}` : ''
+                            }`
                         }
                         {!isAnalyzing && (
-                          <span className="block mt-1 font-black text-indigo-600">"{analysisResult.score}% Freshness Score Verified"</span>
+                          <span className={`block mt-2 font-black ${
+                            analysisResult?.status === 'Spoiled' ? 'text-red-600' :
+                            analysisResult?.status === 'Moderate' ? 'text-amber-600' :
+                            'text-emerald-600'
+                          }`}>
+                            "{analysisResult.score}% Freshness Score Verified"
+                            {analysisResult.status === 'Spoiled' && ' - SUBMISSION BLOCKED'}
+                          </span>
                         )}
                       </p>
                     </div>
@@ -386,16 +433,16 @@ const DonateFood = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="btn-premium w-full justify-center gap-3 py-4 text-lg mt-2"
-                style={isSubmitting ? { backgroundColor: '#6b7280', cursor: 'not-allowed', transform: 'none', boxShadow: 'none' } : {}}
+                disabled={isSubmitDisabled}
+                className="btn-premium w-full justify-center gap-3 py-4 text-lg mt-6"
+                style={isSubmitDisabled ? { backgroundColor: '#6b7280', cursor: 'not-allowed', transform: 'none', boxShadow: 'none' } : {}}
               >
                 {isSubmitting ? (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : (
                   <>
-                    <Sparkles size={20} />
-                    <span>{position ? 'Activate Redistribution' : 'Pin Location & Submit'}</span>
+                    {isSpoiled ? <AlertTriangle size={20} /> : <Sparkles size={20} />}
+                    <span>{isSpoiled ? 'Safety Check Failed' : position ? 'Activate Redistribution' : 'Pin Location & Submit'}</span>
                     <ArrowRight size={20} />
                   </>
                 )}
