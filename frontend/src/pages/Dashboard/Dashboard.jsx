@@ -4,11 +4,37 @@ import { useNavigate, Link } from 'react-router-dom'
 import {
   Utensils, MapPin, Clock, CheckCircle2, ChevronRight, Bell,
   Home as HomeIcon, Sparkles, AlertCircle, TrendingUp, X,
-  Plus, Heart, Award, History, ArrowUpRight, Package, Navigation
+  Plus, Heart, Award, History, ArrowUpRight, Package, Navigation, Search
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { donationService, http } from '../../services/api'
 import ReceiverMap from '../../components/ReceiverMap'
+
+const DashboardSkeleton = () => (
+  <div className="mx-auto max-w-7xl px-4 py-8 animate-pulse">
+    <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+      <div className="space-y-4 w-full md:w-1/2">
+        <div className="h-8 w-40 bg-slate-200/60 rounded-xl"></div>
+        <div className="h-10 w-64 bg-slate-200/60 rounded-xl"></div>
+        <div className="h-4 w-full max-w-md bg-slate-200/60 rounded"></div>
+      </div>
+      <div className="flex gap-4">
+        <div className="h-16 w-16 bg-slate-200/60 rounded-2xl"></div>
+        <div className="h-16 w-48 bg-slate-200/60 rounded-2xl"></div>
+      </div>
+    </div>
+    <div className="grid gap-8 lg:grid-cols-12">
+      <div className="lg:col-span-7 h-[650px] bg-slate-200/60 rounded-[3rem]"></div>
+      <div className="lg:col-span-5 space-y-4">
+        <div className="h-8 w-40 bg-slate-200/60 rounded-lg mb-6"></div>
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-40 bg-slate-200/60 rounded-3xl"></div>
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
 const Dashboard = () => {
   const { user, token } = useAuth()
   const navigate = useNavigate()
@@ -109,14 +135,7 @@ const Dashboard = () => {
     : missions.filter(m => m.status === 'delivered').reduce((sum, d) => sum + (d.servings || 0), 0)
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[80vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-emerald-100 border-t-brand-primary" />
-          <div className="text-sm font-bold uppercase tracking-widest text-slate-400 animate-pulse">Syncing Impact Data...</div>
-        </div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
@@ -161,16 +180,22 @@ const Dashboard = () => {
               )}
             </button>
           )}
-          <div className="glass rounded-[2rem] px-8 py-4 shadow-lg border-2 border-emerald-50 text-center">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Impact</div>
-            <div className="flex items-center gap-2">
-              <TrendingUp size={18} className="text-brand-primary" />
-              <div className="text-2xl font-bold text-slate-900">
-                {totalMeals.toLocaleString()}
-              </div>
-              <span className="text-xs text-slate-400">meals</span>
+          <motion.div 
+            whileHover={{ scale: 1.05, y: -2 }}
+            className="glass rounded-[2rem] px-6 py-4 shadow-xl shadow-emerald-500/5 border border-white flex items-center gap-4 bg-gradient-to-br from-white to-emerald-50/50 cursor-default"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm border border-emerald-100">
+              <TrendingUp size={24} />
             </div>
-          </div>
+            <div className="text-left">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Impact</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-slate-900">{totalMeals > 0 ? `${totalMeals.toLocaleString()}+` : '0'}</span>
+                <span className="text-sm font-bold text-slate-500">Meals</span>
+              </div>
+              <div className="text-[10px] font-medium text-slate-500">redistributed this year</div>
+            </div>
+          </motion.div>
         </div>
       </header>
 
@@ -194,19 +219,45 @@ const Dashboard = () => {
             </div>
 
             <div className="lg:col-span-5 space-y-6">
-              <h3 className="text-xl font-bold text-slate-800 px-2">Smart Match Feed</h3>
-              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar pb-4">
-                {donations.length > 0 ? (
-                  donations.map((donation) => (
-                    <DonationCard key={donation.id || donation._id} donation={donation} handleAccept={handleAccept} acceptedId={acceptedId} />
-                  ))
-                ) : (
-                  <div className="p-8 text-center glass rounded-3xl border-dashed border-2 border-slate-200">
-                    <div className="text-slate-400 text-sm font-medium">No pending surplus food in your area right now.</div>
-                  </div>
-                )}
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                  Live City Feed
+                </h3>
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase tracking-widest">Live</span>
               </div>
-              <div className="rounded-[2.5rem] bg-white p-8 shadow-2xl">
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar pb-4 relative">
+                <AnimatePresence>
+                  {donations.length > 0 ? (
+                    donations.map((donation, idx) => (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: idx * 0.1 }}
+                        key={donation.id || donation._id}
+                      >
+                        <DonationCard donation={donation} handleAccept={handleAccept} acceptedId={acceptedId} />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      className="p-8 text-center glass rounded-3xl border-dashed border-2 border-slate-200 bg-slate-50/50"
+                    >
+                      <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+                        <Search size={24} className="text-slate-300" />
+                      </div>
+                      <div className="text-slate-500 font-bold mb-1">No Active Missions</div>
+                      <div className="text-slate-400 text-xs">Waiting for new surplus food alerts in your area.</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="glass rounded-[2.5rem] bg-white/80 p-8 shadow-2xl border border-white">
                 <h4 className="text-lg font-bold mb-6 text-slate-800">My Claimed Missions</h4>
                 <div className="space-y-4">
                   <NGOMissionList missions={missions} />
@@ -366,26 +417,63 @@ const Dashboard = () => {
 
 // Sub-components for cleaner structure
 const DonationCard = ({ donation, handleAccept, acceptedId }) => (
-  <motion.div layout className={`glass rounded-3xl p-6 relative overflow-hidden ${donation.isPriority ? 'border-2 border-amber-200' : ''}`}>
-    <div className="flex justify-between items-start">
-      <div>
-        <h4 className="font-bold text-slate-900">{donation.function_name}</h4>
-        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-          <MapPin size={12} /> {donation.pickup_area} • <Clock size={12} /> {donation.remainingHrs}h left
+  <motion.div 
+    layout
+    whileHover={{ y: -4, scale: 1.01 }}
+    className={`glass rounded-3xl p-5 relative overflow-hidden transition-all duration-300 ${
+      donation.isPriority ? 'border-l-4 border-l-red-500 border-t border-r border-b border-white shadow-red-500/10' : 'border border-white/60 shadow-xl shadow-slate-200/50'
+    } bg-gradient-to-br from-white/90 to-white/50`}
+  >
+    {donation.isPriority && (
+      <div className="absolute top-4 right-4 flex items-center gap-1 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider z-10">
+        <AlertCircle size={10} /> Urgent
+      </div>
+    )}
+    {!donation.isPriority && (
+      <div className="absolute top-4 right-4 flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider z-10">
+        <Sparkles size={10} /> Fresh Match
+      </div>
+    )}
+
+    <div className="flex gap-4">
+      <div className="h-16 w-16 rounded-2xl bg-slate-100 flex-shrink-0 overflow-hidden shadow-inner border border-slate-200/50">
+        <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${donation.id || donation._id}&backgroundColor=e2e8f0`} alt="Food" className="h-full w-full object-cover" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-slate-900 truncate pr-24">{donation.function_name}</h4>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1 mb-2">
+           <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">{donation.donor?.name || 'Local Food Partner'}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md">
+            <MapPin size={12} className="text-slate-400"/> 
+            <span className="truncate max-w-[100px]">{donation.pickup_area}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 px-2 py-1 rounded-md text-amber-700">
+            <Clock size={12} /> {donation.remainingHrs}h left
+          </div>
         </div>
       </div>
-      <div className="text-right">
-        <div className="text-lg font-black text-emerald-600">{donation.servings}</div>
-        <div className="text-[10px] font-bold text-slate-400 uppercase">Meals</div>
-      </div>
     </div>
-    <button
-      onClick={() => handleAccept(donation.id || donation._id)}
-      disabled={acceptedId !== null}
-      className="mt-6 w-full rounded-2xl bg-slate-900 py-4 text-sm font-black text-white hover:bg-brand-primary transition-all shadow-lg hover:shadow-brand-primary/20 active:scale-[0.98]"
-    >
-      {acceptedId === (donation.id || donation._id) ? 'Accepting...' : 'Claim Mission'}
-    </button>
+
+    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+      <div className="flex flex-col">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quantity</span>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xl font-black text-emerald-600">{donation.servings}</span>
+          <span className="text-xs font-bold text-emerald-600/70">Meals</span>
+        </div>
+      </div>
+      <button
+        onClick={() => handleAccept(donation.id || donation._id)}
+        disabled={acceptedId !== null}
+        className="rounded-xl bg-slate-900 px-6 py-3 text-xs font-black text-white hover:bg-brand-primary transition-all shadow-md hover:shadow-brand-primary/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        {acceptedId === (donation.id || donation._id) ? (
+          <><div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Claiming...</>
+        ) : 'Claim Mission'}
+      </button>
+    </div>
   </motion.div>
 )
 
@@ -393,52 +481,73 @@ const NGOMissionList = ({ missions }) => {
   const navigate = useNavigate()
   return missions.length > 0 ? (
     missions.map(m => (
-      <div key={m.id || m._id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-white hover:border-emerald-200 border transition-all cursor-pointer group" onClick={() => navigate(`/tracking/${m.id || m._id}`)}>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm group-hover:bg-emerald-50">
-            <Package size={18} />
+      <motion.div 
+        whileHover={{ scale: 1.01, x: 4 }}
+        key={m.id || m._id} 
+        className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-lg border border-slate-100 hover:border-emerald-200 transition-all cursor-pointer group" 
+        onClick={() => navigate(`/tracking/${m.id || m._id}`)}
+      >
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm group-hover:bg-emerald-50 border border-slate-100">
+            <Navigation size={18} />
           </div>
           <div>
             <div className="text-sm font-bold text-slate-800">{m.function_name}</div>
-            <div className="text-[10px] text-slate-400 font-medium">
-              {m.servings} meals • {m.pickup_area}
+            <div className="flex items-center gap-2 text-[10px] font-medium text-slate-500 mt-1">
+              <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">{m.servings} meals</span>
+              <span className="bg-slate-100 px-2 py-0.5 rounded max-w-[100px] truncate">{m.pickup_area}</span>
             </div>
           </div>
         </div>
-        <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-primary" />
-      </div>
+        <div className="h-8 w-8 rounded-full flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
+          <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-primary" />
+        </div>
+      </motion.div>
     ))
   ) : (
-    <div className="text-center py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+    <div className="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
       No missions claimed yet
     </div>
   )
 }
 
 const StatsCard = ({ title, value, icon, dark, subtitle }) => (
-  <div className={`rounded-[2.5rem] p-10 shadow-xl transition-all duration-500 hover:scale-[1.02] ${dark ? 'glass-dark' : 'glass border border-white/50'}`}>
-    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl ${dark ? 'bg-white/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+  <div className={`rounded-[2.5rem] p-8 shadow-xl transition-all duration-500 hover:scale-[1.02] relative overflow-hidden group ${dark ? 'glass-dark bg-slate-900' : 'glass border border-white bg-gradient-to-br from-white to-emerald-50/50'}`}>
+    {dark && <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-primary/20 blur-3xl group-hover:bg-brand-primary/30 transition-all duration-700" />}
+    {!dark && <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl group-hover:bg-emerald-300/40 transition-all duration-700" />}
+    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl relative z-10 ${dark ? 'bg-white/10 text-emerald-400 border border-white/10 shadow-lg' : 'bg-emerald-100 text-emerald-600 border border-emerald-200 shadow-lg shadow-emerald-100'}`}>
       {icon}
     </div>
-    <div className="text-5xl font-black">{value}</div>
-    <div className="mt-2 text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</div>
-    {subtitle && <div className="mt-4 text-[10px] font-medium text-slate-500/70">{subtitle}</div>}
+    <div className={`text-5xl font-black relative z-10 ${dark ? 'text-white' : 'text-slate-900'}`}>{value}</div>
+    <div className={`mt-2 text-xs font-bold uppercase tracking-widest relative z-10 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{title}</div>
+    {subtitle && <div className={`mt-4 text-[10px] font-bold relative z-10 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{subtitle}</div>}
   </div>
 )
 
 const HistoryItem = ({ donation }) => {
   const navigate = useNavigate()
   return (
-    <div onClick={() => navigate(`/tracking/${donation.id || donation._id}`)} className="flex items-center justify-between rounded-3xl bg-slate-50 p-6 hover:bg-white hover:shadow-lg transition-all cursor-pointer group">
+    <motion.div 
+      whileHover={{ scale: 1.01, x: 4 }}
+      onClick={() => navigate(`/tracking/${donation.id || donation._id}`)} 
+      className="flex items-center justify-between rounded-3xl bg-white/60 p-5 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/5 transition-all cursor-pointer border border-white group"
+    >
       <div className="flex items-center gap-4">
-        <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover:bg-emerald-50"><Package size={20} className="text-slate-400 group-hover:text-emerald-600" /></div>
+        <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center shadow-inner border border-emerald-100 group-hover:bg-emerald-100 transition-colors">
+          <Package size={20} className="text-emerald-500 group-hover:text-emerald-600" />
+        </div>
         <div>
           <div className="font-bold text-slate-800">{donation.function_name}</div>
-          <div className="text-xs text-slate-500">{new Date(donation.created_at).toLocaleDateString()} • {donation.servings} servings</div>
+          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 mt-1">
+            <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">{new Date(donation.created_at).toLocaleDateString()}</span>
+            <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded"><Utensils size={10}/>{donation.servings} meals</span>
+          </div>
         </div>
       </div>
-      <ArrowUpRight size={20} className="text-slate-300 group-hover:text-emerald-500" />
-    </div>
+      <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors text-slate-300">
+        <ArrowUpRight size={16} />
+      </div>
+    </motion.div>
   )
 }
 
