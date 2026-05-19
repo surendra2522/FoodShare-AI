@@ -1,12 +1,40 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { LayoutDashboard, Users, Activity, Settings, ShieldAlert, BarChart } from 'lucide-react'
+import { analyticsService } from '../../services/api'
 
 const AdminDashboard = () => {
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchSummary()
+  }, [])
+
+  const fetchSummary = async () => {
+    try {
+      const res = await analyticsService.getSummary()
+      setSummary(res.data)
+    } catch (err) {
+      console.error('Failed to fetch admin stats', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading || !summary) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-500" />
+      </div>
+    )
+  }
+
   const stats = [
-    { label: 'Total Users', value: '1,240', icon: <Users size={20} />, color: 'text-indigo-600' },
-    { label: 'System Uptime', value: '99.9%', icon: <Activity size={20} />, color: 'text-emerald-600' },
-    { label: 'Active Missions', value: '18', icon: <ShieldAlert size={20} />, color: 'text-amber-600' },
-    { label: 'Data Synced', value: '4.2 TB', icon: <BarChart size={20} />, color: 'text-brand-primary' },
+    { label: 'Active Partners', value: summary.activePartners || '0', icon: <Users size={20} />, color: 'text-indigo-600' },
+    { label: 'Platform Efficiency', value: `${summary.freshnessRate || 98}%`, icon: <Activity size={20} />, color: 'text-emerald-600' },
+    { label: 'Total Missions', value: summary.totalDonations || '0', icon: <ShieldAlert size={20} />, color: 'text-amber-600' },
+    { label: 'Meals Saved', value: summary.totalServings || '0', icon: <BarChart size={20} />, color: 'text-brand-primary' },
   ]
 
   return (
@@ -42,47 +70,49 @@ const AdminDashboard = () => {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="glass col-span-2 rounded-[2.5rem] p-8 shadow-xl">
-          <h3 className="mb-6 font-bold text-slate-800">User Growth</h3>
-          <div className="h-64 w-full flex items-end gap-2">
-            {[40, 70, 45, 90, 65, 80, 50, 100].map((h, i) => (
-              <motion.div 
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                className="flex-1 rounded-t-lg bg-brand-primary/20 hover:bg-brand-primary transition-colors cursor-pointer"
-              />
-            ))}
-          </div>
-          <div className="mt-4 flex justify-between text-[10px] font-bold text-slate-400">
-            <span>Jan</span>
-            <span>Feb</span>
-            <span>Mar</span>
-            <span>Apr</span>
-            <span>May</span>
-            <span>Jun</span>
-            <span>Jul</span>
-            <span>Aug</span>
+          <h3 className="mb-6 font-bold text-slate-800">Mission Servings Trend (7 Days)</h3>
+          <div className="h-64 w-full flex items-end gap-4">
+            {summary.trends?.map((t, i) => {
+              const max = Math.max(...summary.trends.map(x => x.servings || 100))
+              const height = ((t.servings || 0) / max) * 100 || 5
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${height}%` }}
+                    className="w-full rounded-t-lg bg-brand-primary/20 group-hover:bg-brand-primary transition-colors relative"
+                  >
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-bold py-1 px-2 rounded-lg pointer-events-none">
+                      {t.servings}
+                    </div>
+                  </motion.div>
+                  <div className="text-[10px] font-bold text-slate-400">{t.day}</div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
         <div className="glass rounded-[2.5rem] p-8 shadow-xl">
-          <h3 className="mb-6 font-bold text-slate-800">Pending Verifications</h3>
+          <h3 className="mb-6 font-bold text-slate-800">Recent Network Activity</h3>
           <div className="space-y-4">
-            {[
-              { name: 'Global NGO', date: '2h ago' },
-              { name: 'City Banquet Hall', date: '5h ago' },
-              { name: 'Unity Care Home', date: '1d ago' },
-            ].map((item, idx) => (
+            {summary.recentActivity?.slice(0, 4).map((item, idx) => (
               <div key={idx} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                 <div>
-                  <div className="text-sm font-bold text-slate-800">{item.name}</div>
-                  <div className="text-[10px] text-slate-400">{item.date}</div>
+                  <div className="text-sm font-bold text-slate-800 truncate max-w-[150px]">{item.donorName}</div>
+                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">{item.servings} meals • {item.status}</div>
                 </div>
-                <button className="rounded-lg bg-white px-3 py-1.5 text-[10px] font-bold text-brand-primary shadow-sm hover:bg-brand-primary hover:text-white transition-colors">Review</button>
+                <div className={`rounded-lg px-3 py-1.5 text-[10px] font-bold shadow-sm ${
+                  item.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                  item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {item.status}
+                </div>
               </div>
             ))}
           </div>
-          <button className="mt-6 w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">See all pending requests</button>
+          <button className="mt-6 w-full text-center text-xs font-bold text-slate-400 hover:text-brand-primary transition-colors">View Complete Logs</button>
         </div>
       </div>
     </div>
