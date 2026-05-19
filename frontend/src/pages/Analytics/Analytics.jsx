@@ -56,9 +56,9 @@ const Analytics = () => {
     },
     { 
       label: 'Active Partners', 
-      value: '156', 
+      value: data.activePartners?.toLocaleString() || '0', 
       icon: <Building2 className="text-indigo-600" />, 
-      trend: '+8 new this week',
+      trend: 'Registered today',
       color: 'bg-indigo-50'
     },
     { 
@@ -161,11 +161,9 @@ const Analytics = () => {
             <div className="glass rounded-[2.5rem] p-8">
               <h4 className="mb-6 font-bold text-slate-800">Food Type Breakdown</h4>
               <div className="space-y-5">
-                {[
-                  { type: 'Pure Veg', percent: 78, color: 'bg-emerald-500' },
-                  { type: 'Mixed Meals', percent: 15, color: 'bg-brand-secondary' },
-                  { type: 'Dry Goods', percent: 7, color: 'bg-indigo-500' },
-                ].map((item, idx) => (
+                {(data?.foodTypes?.length > 0 ? data.foodTypes : [
+                  { type: 'No Data Yet', percent: 0 }
+                ]).map((item, idx) => (
                   <div key={idx}>
                     <div className="mb-2 flex justify-between text-sm font-bold">
                       <span className="text-slate-600">{item.type}</span>
@@ -176,7 +174,7 @@ const Analytics = () => {
                         initial={{ width: 0 }}
                         animate={{ width: `${item.percent}%` }}
                         transition={{ duration: 1, delay: 0.5 }}
-                        className={`h-full ${item.color}`}
+                        className={`h-full ${['bg-emerald-500', 'bg-brand-secondary', 'bg-indigo-500'][idx % 3]}`}
                       />
                     </div>
                   </div>
@@ -191,8 +189,8 @@ const Analytics = () => {
                  AI Optimization Tip
                </h4>
                <p className="text-sm leading-relaxed text-emerald-100/80">
-                 System detected a <strong>20% spike</strong> in late-night wedding donations on weekends. 
-                 Increasing volunteer standby capacity in Sector 4 could improve match time by <strong>4.5 minutes</strong>.
+                 System detected a peak efficiency of <strong>{data?.trends?.[0]?.efficiency || 0}%</strong> today. 
+                 Continuing to distribute surplus food in highly active zones will increase overall successful deliveries.
                </p>
                <button className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors">
                  Apply Optimization <ArrowUpRight size={14} />
@@ -219,12 +217,12 @@ const Analytics = () => {
             </p>
             <div className="mt-8 grid grid-cols-2 gap-4 w-full">
               <div className="rounded-[2rem] bg-slate-50 p-5 border border-slate-100 hover:bg-emerald-50 hover:border-emerald-100 transition-colors">
-                 <div className="text-2xl font-black text-slate-900">{(data?.totalServings * 0.08).toFixed(0)}</div>
+                 <div className="text-2xl font-black text-slate-900">{Math.floor((data?.totalServings || 0) * 0.08)}</div>
                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trees Planted</div>
               </div>
               <div className="rounded-[2rem] bg-slate-50 p-5 border border-slate-100 hover:bg-emerald-50 hover:border-emerald-100 transition-colors">
-                 <div className="text-2xl font-black text-slate-900">{(data?.totalServings * 3).toFixed(0)}k</div>
-                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Car Miles</div>
+                 <div className="text-2xl font-black text-slate-900">{Math.floor((data?.totalServings || 0) * 3)}</div>
+                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Car Miles Saved</div>
               </div>
             </div>
           </div>

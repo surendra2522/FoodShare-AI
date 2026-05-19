@@ -48,9 +48,9 @@ const Dashboard = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [lastClaimedId, setLastClaimedId] = useState(null)
 
-  // States from Donor
   const [myDonations, setMyDonations] = useState([])
   const [missions, setMissions] = useState([])
+  const [analytics, setAnalytics] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -100,6 +100,8 @@ const Dashboard = () => {
       }
       const notifRes = await http.get('/notifications')
       setNotifications(notifRes.data)
+      const analyticsRes = await http.get('/analytics/summary')
+      setAnalytics(analyticsRes.data)
     } catch (error) {
       console.error('Fetch failed', error)
     } finally {
@@ -133,6 +135,19 @@ const Dashboard = () => {
   const totalMeals = role === 'donor'
     ? myDonations.reduce((sum, d) => sum + (d.servings || 0), 0)
     : missions.filter(m => m.status === 'delivered').reduce((sum, d) => sum + (d.servings || 0), 0)
+
+  const uniqueNGOs = new Set(myDonations.filter(d => d.receiver_id).map(d => d.receiver_id)).size;
+  const activeDonationsCount = myDonations.filter(d => d.status === 'pending' || d.status === 'accepted' || d.status === 'in_transit').length;
+
+  const chartData = Array(7).fill(0);
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayDonations = myDonations.filter(don => don.created_at?.startsWith(dateStr));
+    chartData[6 - i] = dayDonations.reduce((sum, don) => sum + (don.servings || 0), 0);
+  }
+  const maxChart = Math.max(...chartData, 1);
 
   if (isLoading) {
     return <DashboardSkeleton />
@@ -269,14 +284,18 @@ const Dashboard = () => {
           <>
             {/* Donor View */}
             <div className="lg:col-span-8 space-y-8">
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-3">
                 <StatsCard title="Total Shared" value={totalMeals} icon={<Heart size={32} fill="currentColor" />} />
                 <StatsCard
-                  title="Badges"
-                  value={`Level ${Math.floor(totalMeals / 100) + 1}`}
+                  title="NGOs Helped"
+                  value={uniqueNGOs}
                   icon={<Award size={32} />}
                   dark
-                  subtitle={`${Math.max(0, 100 - (totalMeals % 100))} meals to Level ${Math.floor(totalMeals / 100) + 2}`}
+                />
+                <StatsCard 
+                  title="Active Missions" 
+                  value={activeDonationsCount} 
+                  icon={<Package size={32} />} 
                 />
               </div>
 
@@ -303,15 +322,15 @@ const Dashboard = () => {
                 <div className="mt-6 space-y-4">
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                     <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Efficiency</div>
-                    <div className="text-lg font-bold">AI predicts 95% successful redistribution</div>
+                    <div className="text-lg font-bold">System predicts {analytics?.trends?.[0]?.efficiency || 95}% successful redistribution today</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Demand Alert</div>
-                    <div className="text-lg font-bold text-amber-100">High demand detected nearby</div>
+                    <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Your Impact</div>
+                    <div className="text-lg font-bold text-amber-100">You've saved {(totalMeals * 0.42).toFixed(1)}kg CO2 emissions</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Critical Insight</div>
-                    <div className="text-lg font-bold text-red-100">Average redistribution: 14 mins</div>
+                    <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Community</div>
+                    <div className="text-lg font-bold text-blue-100">{analytics?.activePartners || 12} active partners on the platform</div>
                   </div>
                 </div>
                 <div className="mt-8 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
@@ -321,30 +340,32 @@ const Dashboard = () => {
               </div>
 
               <div className="glass rounded-[3rem] p-10 shadow-xl border-2 border-emerald-50">
-                <h3 className="text-xl font-bold text-slate-800 mb-6">Food Saved Chart</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-6">Your Meals Saved (7 Days)</h3>
                 <div className="flex items-end justify-between h-32 gap-2">
-                  {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
-                    <div key={i} className="flex-1 bg-emerald-100 rounded-t-lg relative group transition-all hover:bg-emerald-500" style={{ height: `${h}%` }}>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        {h}kg
+                  {chartData.map((val, i) => {
+                    const h = (val / maxChart) * 100;
+                    return (
+                    <div key={i} className="flex-1 bg-emerald-100 rounded-t-lg relative group transition-all hover:bg-emerald-500" style={{ height: `${h || 5}%` }}>
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                        {val} meals
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
                 <div className="mt-4 flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                  <span>Mon</span><span>Sun</span>
+                  <span>6 days ago</span><span>Today</span>
                 </div>
               </div>
               <div className="glass rounded-[3rem] p-10 shadow-xl border-2 border-emerald-50">
                 <h3 className="text-xl font-bold text-slate-800 mb-6">Impact Community</h3>
                 <div className="flex -space-x-4 mb-6">
-                  {[1, 2, 3, 4, 5].map(i => (
+                  {Array.from({ length: Math.min(5, analytics?.activePartners || 5) }).map((_, i) => (
                     <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-100">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt="User" />
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=donor${i + 10}`} alt="User" />
                     </div>
                   ))}
                 </div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Join 500+ active donors</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Join {analytics?.activePartners || 12} active donors</p>
               </div>
             </div>
           </>

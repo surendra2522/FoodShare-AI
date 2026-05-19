@@ -1,10 +1,17 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Heart, MapPin, Zap, Bell, Gift, Sparkles, ShieldCheck, PieChart, Clock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { http } from '../../services/api'
 
 function Home() {
   const { user } = useAuth()
+  const [analytics, setAnalytics] = useState(null)
+  
+  useEffect(() => {
+    http.get('/analytics/summary').then(res => setAnalytics(res.data)).catch(() => {})
+  }, [])
   
   const container = {
     hidden: { opacity: 0 },
@@ -77,12 +84,14 @@ function Home() {
               >
                  <div className="absolute top-0 right-0 h-32 w-32 bg-brand-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
                  <div className="flex -space-x-4 shrink-0 relative z-10">
-                    {[1, 2, 3, 4].map(i => (
+                    {Array.from({ length: Math.min(4, analytics?.activePartners || 4) }).map((_, i) => (
                        <div key={i} className="h-14 w-14 rounded-full border-4 border-white bg-slate-100 shadow-sm overflow-hidden flex items-center justify-center transition-transform hover:scale-110 hover:z-20 cursor-pointer">
                           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt={`User ${i}`} className="h-full w-full object-cover" />
                        </div>
                     ))}
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-slate-900 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brand-primary hover:z-20 cursor-pointer">+500</div>
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-slate-900 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brand-primary hover:z-20 cursor-pointer">
+                      +{Math.max(0, (analytics?.activePartners || 10) - 4)}
+                    </div>
                  </div>
                  <div className="flex flex-col gap-1 relative z-10">
                     <span className="font-black text-slate-900 flex items-center gap-2 text-3xl">
@@ -91,7 +100,7 @@ function Home() {
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
                       >
-                        12,000+
+                        {analytics?.totalServings ? `${analytics.totalServings.toLocaleString()}+` : '...'}
                       </motion.span>
                       <Heart size={24} className="text-emerald-500 fill-emerald-500" />
                     </span>
@@ -243,8 +252,8 @@ function Home() {
             </div>
             <div className="grid grid-cols-2 gap-6">
                {[
-                 { label: 'Meals Served', val: '12K+', icon: <Gift className="text-emerald-400" /> },
-                 { label: 'Freshness Index', val: '98%', icon: <Zap className="text-emerald-400" /> }
+                 { label: 'Meals Served', val: analytics?.totalServings > 1000 ? `${(analytics.totalServings/1000).toFixed(1)}K+` : `${analytics?.totalServings || 0}+`, icon: <Gift className="text-emerald-400" /> },
+                 { label: 'Freshness Index', val: `${analytics?.freshnessRate || 98}%`, icon: <Zap className="text-emerald-400" /> }
                ].map((stat, i) => (
                  <div key={i} className="rounded-3xl bg-white/5 p-8 backdrop-blur-md border border-white/10">
                     <div className="mb-4 text-emerald-400">{stat.icon}</div>

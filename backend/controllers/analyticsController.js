@@ -52,6 +52,18 @@ export const getSummary = async (req, res, next) => {
       ngoName: d.ngo?.name || null
     }))
 
+    const foodTypeCounts = {}
+    safeDonations.forEach(d => {
+      const ft = d.food_type || 'Mixed Meals'
+      foodTypeCounts[ft] = (foodTypeCounts[ft] || 0) + 1
+    })
+
+    const foodTypesArray = Object.keys(foodTypeCounts).map(type => ({
+      type,
+      count: foodTypeCounts[type],
+      percent: Math.round((foodTypeCounts[type] / Math.max(1, totalDonations)) * 100)
+    })).sort((a, b) => b.count - a.count).slice(0, 3)
+
     res.json({
       totalDonations,
       matchedDonations,
@@ -61,6 +73,7 @@ export const getSummary = async (req, res, next) => {
       activePartners,
       trends,
       recentActivity,
+      foodTypes: foodTypesArray,
       impactMetrics: [
         { label: 'Meals Provided', value: totalServings, unit: '', icon: 'Utensils' },
         { label: 'CO2 Prevented', value: co2Saved, unit: 'kg', icon: 'Leaf' },
