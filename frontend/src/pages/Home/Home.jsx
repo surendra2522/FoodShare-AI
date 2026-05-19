@@ -71,28 +71,35 @@ function Home() {
                 )}
               </div>
               
-              <div className="mt-12 flex items-center gap-8 border-t border-slate-200 pt-8">
-                 <div className="flex -space-x-4">
+              <motion.div 
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="mt-12 flex flex-col sm:flex-row items-start sm:items-center gap-6 border border-white bg-gradient-to-br from-white/90 to-emerald-50/50 backdrop-blur-md shadow-2xl shadow-emerald-900/5 rounded-[2rem] p-6 lg:p-8 relative overflow-hidden"
+              >
+                 <div className="absolute top-0 right-0 h-32 w-32 bg-brand-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                 <div className="flex -space-x-4 shrink-0 relative z-10">
                     {[1, 2, 3, 4].map(i => (
-                       <div key={i} className="h-12 w-12 rounded-full border-4 border-white bg-slate-200 shadow-sm flex items-center justify-center text-slate-600">
-                          <User size={24} />
+                       <div key={i} className="h-14 w-14 rounded-full border-4 border-white bg-slate-100 shadow-sm overflow-hidden flex items-center justify-center transition-transform hover:scale-110 hover:z-20 cursor-pointer">
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user${i}`} alt={`User ${i}`} className="h-full w-full object-cover" />
                        </div>
                     ))}
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-slate-900 text-[10px] font-bold text-white">+500</div>
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-slate-900 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brand-primary hover:z-20 cursor-pointer">+500</div>
                  </div>
-                 <div className="text-sm font-medium text-slate-500">
-                    <span className="font-bold text-slate-900 block text-lg">
+                 <div className="flex flex-col gap-1 relative z-10">
+                    <span className="font-black text-slate-900 flex items-center gap-2 text-3xl">
                       <motion.span
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ duration: 2 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
                       >
                         12,000+
                       </motion.span>
+                      <Heart size={24} className="text-emerald-500 fill-emerald-500" />
                     </span>
-                    Meals redistributed this year
+                    <span className="uppercase tracking-widest text-xs font-bold text-slate-500 flex items-center gap-2">
+                       Meals redistributed this year
+                    </span>
                  </div>
-              </div>
+              </motion.div>
             </motion.div>
 
             <motion.div 

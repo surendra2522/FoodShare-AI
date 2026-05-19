@@ -1,24 +1,42 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { BarChart3, TrendingUp, Users, Leaf, Calendar, Sparkles, Map as MapIcon, Globe, ArrowUpRight, Zap, Utensils, Building2, MapPin } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Leaf, Calendar, Sparkles, Map as MapIcon, Globe, ArrowUpRight, Zap, Utensils, Building2, MapPin, AlertCircle } from 'lucide-react'
 import { http } from '../../services/api'
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return 'Just now';
+  const diff = Math.floor((new Date() - new Date(dateString)) / 60000);
+  if (diff < 1) return 'Just now';
+  if (diff < 60) return `${diff}m ago`;
+  const hours = Math.floor(diff / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+};
 
 const Analytics = () => {
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const response = await http.get('/analytics/summary')
         setData(response.data)
-      } catch (error) {
-        console.error('Failed to fetch analytics', error)
+        setError(null)
+      } catch (err) {
+        console.error('Failed to fetch analytics', err)
+        setError('Failed to fetch live activity. Retrying...')
       } finally {
         setIsLoading(false)
       }
     }
+    
     fetchAnalytics()
+    const interval = setInterval(fetchAnalytics, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const stats = data ? [
@@ -211,54 +229,94 @@ const Analytics = () => {
             </div>
           </div>
 
-          <div className="glass rounded-[3rem] p-10 shadow-2xl bg-slate-900 text-white relative group overflow-hidden border border-white/5">
-             <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-             <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                   <h4 className="font-bold flex items-center gap-3 text-lg">
-                     <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <Globe size={18} />
+          <div className="glass rounded-[3rem] p-8 shadow-2xl border-2 border-white bg-gradient-to-br from-white/90 to-slate-50/90 relative group overflow-hidden flex flex-col h-[550px]">
+             <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+             <div className="relative z-10 flex flex-col h-full">
+                <div className="flex items-center justify-between mb-6 shrink-0">
+                   <h4 className="font-black flex items-center gap-3 text-xl text-slate-800">
+                     <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-brand-primary shadow-inner">
+                        <Globe size={20} />
                      </div>
                      Live City Feed
                    </h4>
-                   <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-widest animate-pulse">Live</span>
-                      <div className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981]" />
+                   <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+                      <span className="text-[10px] font-black uppercase text-brand-primary tracking-widest animate-pulse">Live</span>
+                      <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-primary shadow-[0_0_8px_#10B981]"></span>
+                      </div>
                    </div>
                 </div>
-                <div className="space-y-6">
-                   {(data?.recentActivity || [
-                     { area: 'Jubilee Hills', time: '2m ago', servings: 45, status: 'Matched' },
-                     { area: 'Banjara Hills', time: '12m ago', servings: 120, status: 'In Transit' },
-                     { area: 'Gachibowli', time: '25m ago', servings: 30, status: 'Delivered' },
-                   ]).map((item, i) => (
+
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                  {error ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-red-200 rounded-2xl bg-red-50/50">
+                      <AlertCircle size={32} className="text-red-400 mb-3" />
+                      <span className="text-sm font-bold text-red-600">{error}</span>
+                    </div>
+                  ) : isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="animate-pulse flex items-center justify-between p-4 bg-slate-100/50 rounded-2xl border border-white">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-slate-200/70 rounded-xl" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-32 bg-slate-200/70 rounded" />
+                              <div className="h-3 w-48 bg-slate-200/70 rounded" />
+                            </div>
+                          </div>
+                          <div className="h-6 w-20 bg-slate-200/70 rounded-lg" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : data?.recentActivity?.length > 0 ? (
+                    data.recentActivity.map((item, i) => (
                      <motion.div 
-                        initial={{ x: -10, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 1 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        key={i} 
-                        className="flex items-center justify-between border-b border-white/5 pb-5 last:border-0 last:pb-0 group/item"
+                        key={item.id || i} 
+                        className="flex items-center justify-between p-4 bg-white/80 border border-white hover:border-brand-primary/30 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group/item hover:-translate-y-0.5"
                       >
                         <div className="flex items-center gap-4">
-                           <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 group-hover/item:text-emerald-400 transition-colors">
-                              <MapPin size={16} />
+                           <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover/item:text-brand-primary group-hover/item:bg-emerald-50 transition-colors shadow-inner shrink-0">
+                              <MapPin size={20} />
                            </div>
-                           <div>
-                              <div className="text-sm font-bold text-white group-hover/item:text-emerald-50 transition-colors">{item.area}</div>
-                              <div className="text-[10px] text-slate-400 font-medium">{item.time} • <span className="text-emerald-400/80">{item.servings} meals</span></div>
+                           <div className="min-w-0">
+                              <div className="text-sm font-black text-slate-800 truncate pr-2">{item.area}</div>
+                              <div className="text-[11px] text-slate-500 font-medium mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
+                                <span className="text-brand-primary font-bold whitespace-nowrap">{item.servings} meals</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 truncate max-w-[100px]">{item.donorName}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="whitespace-nowrap font-bold">{formatTimeAgo(item.time)}</span>
+                              </div>
                            </div>
                         </div>
-                        <div className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
+                        <div className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border shrink-0 ml-2 ${
                           item.status === 'Delivered' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                            : 'bg-emerald-600/40 text-white border-emerald-500/40'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                            : item.status === 'In Transit' || item.status === 'Accepted'
+                            ? 'bg-amber-50 text-amber-600 border-amber-200'
+                            : 'bg-slate-50 text-slate-600 border-slate-200'
                         }`}>
                           {item.status}
                         </div>
                      </motion.div>
-                   ))}
+                    ))
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                      <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                        <MapIcon size={24} className="text-slate-300" />
+                      </div>
+                      <span className="text-sm font-bold text-slate-500">No live donations available</span>
+                    </div>
+                  )}
                 </div>
-                <button className="mt-8 w-full rounded-2xl bg-white/5 border border-white/10 py-4 text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all active:scale-[0.98] text-slate-300">
+                <button 
+                  onClick={() => navigate('/tracking')}
+                  className="mt-6 w-full rounded-2xl bg-slate-900 border-2 border-slate-800 py-4 text-xs font-black uppercase tracking-widest text-white hover:bg-brand-primary hover:border-brand-primary transition-all shadow-lg hover:shadow-brand-primary/30 active:scale-[0.98] shrink-0"
+                >
                   View Full Map Activity
                 </button>
              </div>

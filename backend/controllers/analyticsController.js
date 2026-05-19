@@ -4,7 +4,8 @@ export const getSummary = async (req, res, next) => {
   try {
     const { data: donations, error: dError } = await supabase
       .from('donations')
-      .select('servings, status, created_at')
+      .select('*, donor:users!donor_id(name), ngo:users!ngo_id(name)')
+      .order('created_at', { ascending: false })
     
     const { data: users, error: uError } = await supabase
       .from('users')
@@ -41,11 +42,14 @@ export const getSummary = async (req, res, next) => {
       })
     }
 
-    const recentActivity = safeDonations.slice(0, 3).map(d => ({
+    const recentActivity = safeDonations.slice(0, 10).map(d => ({
+      id: d.id,
       area: d.pickup_area || 'City Center',
-      time: 'Just now',
+      time: d.created_at,
       servings: d.servings,
-      status: (d.status || 'pending').charAt(0).toUpperCase() + (d.status || 'pending').slice(1)
+      status: (d.status || 'pending').charAt(0).toUpperCase() + (d.status || 'pending').slice(1),
+      donorName: d.donor?.name || 'Local Donor',
+      ngoName: d.ngo?.name || null
     }))
 
     res.json({
