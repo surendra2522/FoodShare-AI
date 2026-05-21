@@ -15,7 +15,7 @@ const DonateFood = () => {
     functionType: 'Wedding',
     expectedGuests: '',
     foodType: 'Veg',
-    servings: '',
+    totalPrepared: '',
     expiryHours: '4',
     pickupArea: '',
     notes: '',
@@ -77,6 +77,15 @@ const DonateFood = () => {
     const timer = setTimeout(fetchPrediction, 500) // Debounce
     return () => clearTimeout(timer)
   }, [form.expectedGuests, form.foodType, form.expiryHours])
+
+  const expected = parseInt(form.expectedGuests) || 0;
+  const prepared = parseInt(form.totalPrepared) || 0;
+  const calculatedSurplus = Math.max(0, prepared - expected);
+  
+  let finalSurplus = calculatedSurplus;
+  if (aiPrediction && calculatedSurplus > 0) {
+    finalSurplus = Math.min(calculatedSurplus, aiPrediction.estimate);
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -154,7 +163,7 @@ const DonateFood = () => {
   }
 
   const isSpoiled = analysisResult?.status === 'Spoiled';
-  const isSubmitDisabled = isSubmitting || isSpoiled || isAnalyzing;
+  const isSubmitDisabled = isSubmitting || isSpoiled || isAnalyzing || (prepared > 0 && finalSurplus <= 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -170,6 +179,7 @@ const DonateFood = () => {
     try {
       await donationService.submitDonation({
         ...form,
+        servings: finalSurplus,
         location: { lat: position.lat, lng: position.lng }
       })
       setSuccess(true)
@@ -229,7 +239,7 @@ const DonateFood = () => {
           <p className="mt-4 text-slate-600">Nearby NGOs are being notified. Your mission is active!</p>
           <div className="mt-8 flex gap-3">
             <button
-              onClick={() => { setSuccess(false); setForm({ functionName: '', functionType: 'Wedding', expectedGuests: '', foodType: 'Veg', servings: '', expiryHours: '4', pickupArea: '', notes: '' }); setPosition(null) }}
+              onClick={() => { setSuccess(false); setForm({ functionName: '', functionType: 'Wedding', expectedGuests: '', foodType: 'Veg', totalPrepared: '', expiryHours: '4', pickupArea: '', notes: '' }); setPosition(null) }}
               className="btn-premium flex-1 justify-center py-3"
             >
               Donate More
@@ -355,17 +365,23 @@ const DonateFood = () => {
               </AnimatePresence>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* Actual Servings */}
+                {/* Total Food Prepared */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-2 text-sm font-bold text-slate-700">
                     <Utensils size={14} style={{ color: '#10b981' }} />
-                    Actual Servings *
+                    Total Food Prepared *
                   </label>
                   <input
-                    type="number" name="servings" value={form.servings}
-                    onChange={handleChange} required placeholder="Meals available"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                    type="number" name="totalPrepared" value={form.totalPrepared}
+                    onChange={handleChange} required placeholder="Total meals cooked"
+                    className={`w-full rounded-2xl border ${prepared > 0 && prepared < expected ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50'} px-4 py-3.5 text-slate-900 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all`}
                   />
+                  {prepared > 0 && prepared < expected && (
+                    <p className="text-xs text-red-500 mt-1.5 font-bold flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      Prepared food is less than expected guests
+                    </p>
+                  )}
                 </div>
 
                 {/* Freshness Window */}
@@ -381,6 +397,31 @@ const DonateFood = () => {
                   />
                 </div>
               </div>
+
+              {/* Final Redistributable Meals */}
+              <AnimatePresence>
+                {prepared > 0 && expected > 0 && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/50 p-5">
+                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-900 uppercase tracking-widest">
+                        <CheckCircle2 size={16} />
+                        Final Redistributable Meals
+                      </label>
+                      <div className="flex items-end gap-3">
+                        <span className="text-4xl font-black text-emerald-600">{finalSurplus}</span>
+                        <span className="text-sm font-bold text-emerald-700 mb-1">Surplus Meals Available for NGOs</span>
+                      </div>
+                      <p className="text-xs text-emerald-600 mt-2 font-medium">
+                        Calculated as (Total Prepared - Expected Guests). {aiPrediction && finalSurplus < calculatedSurplus ? 'Adjusted down to match realistic AI prediction.' : ''}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Pickup Area */}
               <div>

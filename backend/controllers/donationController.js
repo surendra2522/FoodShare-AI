@@ -2,13 +2,15 @@ import supabase from '../config/supabaseClient.js'
 
 export const submitDonation = async (req, res, next) => {
   try {
-    const { functionName, foodType, servings, expiryHours, pickupArea, notes, location } = req.body
+    const { functionName, foodType, servings, expiryHours, pickupArea, notes, location, expectedGuests, totalPrepared } = req.body
 
     const fullRecord = {
       donor_id: req.user.id,
       function_name: functionName,
       food_type: foodType || 'Veg',
       servings: Number(servings),
+      expected_guests: expectedGuests ? Number(expectedGuests) : null,
+      total_prepared: totalPrepared ? Number(totalPrepared) : null,
       expiry_hours: Number(expiryHours),
       pickup_area: pickupArea,
       notes: notes || null,
@@ -26,6 +28,7 @@ export const submitDonation = async (req, res, next) => {
       const minimalRecord = {
         donor_id: req.user.id,
         function_name: functionName,
+        servings: Number(servings),
         status: 'pending'
       }
       const retry = await supabase.from('donations').insert([minimalRecord]).select('*').single()
