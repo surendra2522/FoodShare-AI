@@ -73,3 +73,9 @@ create table notifications (
 create index idx_notifications_recipient_read_created on notifications(recipient_id, read, created_at desc);
 create index idx_notifications_priority_created on notifications(priority, created_at desc);
 create index idx_notifications_expires_at on notifications(expires_at);
+
+-- Enable Row Level Security (RLS) to prevent unauthorized public API access.
+-- The backend uses a SERVICE_ROLE key, which bypasses RLS, so no policies are needed.
+alter table users enable row level security;
+alter table donations enable row level security;
+alter table notifications enable row level security;
