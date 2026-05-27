@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs'
 import * as mobilenet from '@tensorflow-models/mobilenet'
-import Jimp from 'jimp'
+import { Jimp } from 'jimp'
 
 let net = null
 
